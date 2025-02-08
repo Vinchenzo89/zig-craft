@@ -1,2 +1,4 @@
 # zig-craft
-Learning Zig by making an mini RTS
+Learning Zig by making an small game.
+
+No libraries, just Windows API and OpenGL.
