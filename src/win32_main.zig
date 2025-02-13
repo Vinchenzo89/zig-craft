@@ -121,6 +121,12 @@ pub fn main() !u8 {
         if (0 > windows.wglMakeCurrent(WindowHDC, GLContext)) {
             std.debug.print("Here we load other GL features", .{});
         }
+
+        // Create Windows Bitmap Fonts for the first 256 glyphs of an active font.
+        // This uses glCallLists giving the custom ID 1000 for these bitmap call lists
+        if (0 > windows.wglUseFontBitmapsA(WindowHDC, 0, 256, 1000)) {
+            std.debug.print("wglUseFontBitmapsA() failed", .{});
+        }
     }
 
     // memory stuff
@@ -161,7 +167,7 @@ pub fn main() !u8 {
                     gl.glLoadIdentity();
                     // TODO We need to call the matrix function to push a model matrix
                     gl.glColor3f(quad.color.r, quad.color.g, quad.color.b);
-                    gl.glBegin(gl.GL_TRIANGLES);
+                    gl.glBegin(gl.TRIANGLES);
 
                     gl.glVertex2f(
                         -quad.scale.x + quad.pos.x,
@@ -192,6 +198,12 @@ pub fn main() !u8 {
                 },
             }
         }
+
+        // crazy
+        gl.glRasterPos2f(-0.5, -0.5);
+        gl.glListBase(1000); // NOTE coresponds to the wglUseFontBitmaps above
+        gl.glCallLists(12, gl.UNSIGNED_BYTE, "Hello Text!".ptr);
+        gl.glFlush();
 
         _ = windows.SwapBuffers(WindowHDC);
 
