@@ -13,9 +13,39 @@ pub const Quad = struct {
     color: Color3f,
 };
 
+pub const MAX_TEXT: usize = 32;
+pub const Text = struct {
+    pos: maths.Vector3f,
+    scale: maths.Vector3f,
+    color: Color3f,
+    text: [MAX_TEXT:0]u8,
+
+    pub fn fromConst(
+        text: [:0]const u8,
+        pos: maths.Vector3f,
+        scale: maths.Vector3f,
+        color: Color3f,
+    ) Text {
+        var result = Text{
+            .text = undefined,
+            .pos = pos,
+            .scale = scale,
+            .color = color,
+        };
+        for (0..MAX_TEXT) |i| {
+            result.text[i] = 0;
+            if (i < text.len) {
+                result.text[i] = text[i];
+            }
+        }
+        return result;
+    }
+};
+
 pub const RenderOp = union(enum) {
     ClearScreen: Color3f,
     DrawQuad: Quad,
+    DrawText: Text,
 };
 
 pub const Renderer = struct {

@@ -196,14 +196,16 @@ pub fn main() !u8 {
                     );
                     gl.glEnd();
                 },
+                .DrawText => |text| {
+                    // crazy
+                    gl.glColor3f(text.color.r, text.color.g, text.color.b);
+                    gl.glRasterPos2f(text.pos.x, text.pos.y);
+                    gl.glListBase(1000); // NOTE coresponds to the wglUseFontBitmaps above
+                    gl.glCallLists(@intCast(text.text.len), gl.UNSIGNED_BYTE, &text.text);
+                    gl.glFlush();
+                },
             }
         }
-
-        // crazy
-        gl.glRasterPos2f(-0.5, -0.5);
-        gl.glListBase(1000); // NOTE coresponds to the wglUseFontBitmaps above
-        gl.glCallLists(12, gl.UNSIGNED_BYTE, "Hello Text!".ptr);
-        gl.glFlush();
 
         _ = windows.SwapBuffers(WindowHDC);
 

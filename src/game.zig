@@ -65,17 +65,61 @@ pub fn UpdateAndRender(renderer: *render.Renderer) !void {
     }
 
     // render structures
-    try renderer.ops.append(render.RenderOp{ .DrawQuad = render.Quad{
-        .pos = maths.Vector3f{
-            .x = -0.25,
-            .y = 0.25,
-            .z = 0.0,
+    try renderer.ops.append(render.RenderOp{
+        .DrawQuad = render.Quad{
+            .pos = maths.Vector3f{
+                .x = -0.25,
+                .y = 0.25,
+                .z = 0.0,
+            },
+            .scale = maths.Vector3f{
+                .x = 0.2,
+                .y = 0.2,
+                .z = 1.0,
+            },
+            .color = UnitColor,
         },
-        .scale = maths.Vector3f{
-            .x = 0.2,
-            .y = 0.2,
-            .z = 1.0,
-        },
-        .color = UnitColor,
-    } });
+    });
+
+    try renderer.ops.append(render.RenderOp{
+        .DrawText = render.Text.fromConst(
+            "From the Game Code",
+            maths.Vector3f{
+                .x = -0.5,
+                .y = -0.5,
+                .z = 0.0,
+            },
+            maths.Vector3f{
+                .x = 1.0,
+                .y = 1.0,
+                .z = 1.0,
+            },
+            render.Color3f{
+                .r = 0.0,
+                .g = 1.0,
+                .b = 0.0,
+            },
+        ),
+    });
+
+    try renderer.ops.append(render.RenderOp{
+        .DrawText = render.Text.fromConst(
+            "This is way more than 32 characters so lets see",
+            maths.Vector3f{
+                .x = -0.5,
+                .y = 0.5,
+                .z = 0.0,
+            },
+            maths.Vector3f{
+                .x = 1.0,
+                .y = 1.0,
+                .z = 1.0,
+            },
+            render.Color3f{
+                .r = 1.0,
+                .g = 0.0,
+                .b = 0.0,
+            },
+        ),
+    });
 }
