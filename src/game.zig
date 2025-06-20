@@ -1,14 +1,41 @@
 const std = @import("std");
 const render = @import("renderer.zig");
 const maths = @import("maths.zig");
+const mem = @import("memory.zig");
 
 pub const Entity = struct {
     id: usize,
     pos: maths.Vector3f,
-    size: maths.Vector3f,
+    scale: maths.Vector3f,
 };
 
-pub const GameState = struct {};
+pub const SeekBehavior: type = struct {
+    agentId: usize,
+    targetId: usize,
+    speed: f32,
+};
+
+pub const EvadeBehavior: type = struct {
+    agentId: usize,
+    targetId: usize,
+    speed: f32,
+};
+
+pub const GameState = struct {
+    initialized: bool,
+    entities: std.ArrayList(Entity) = undefined,
+    seekers: [2]?SeekBehavior,
+    evaders: [2]?EvadeBehavior,
+
+    pub fn init(allocator: std.mem.Allocator) GameState {
+        return GameState{
+            .initialized = false,
+            .entities = std.ArrayList(Entity).init(allocator),
+            .seekers = .{ null, null },
+            .evaders = .{ null, null },
+        };
+    }
+};
 
 // colors
 const TileColor = render.Color3f{
@@ -22,11 +49,71 @@ const UnitColor = render.Color3f{
     .b = 0.1,
 };
 
-pub fn UpdateAndRender(renderer: *render.Renderer) !void {
+pub fn UpdateAndRender(state: *GameState, renderer: *render.Renderer) !void {
+    if (!state.initialized) {
+        state.initialized = true;
+
+        var nextId = state.entities.items.len;
+        try state.entities.append(Entity{
+            .id = nextId,
+            .pos = maths.Vector3f{
+                .x = 0.25,
+                .y = 0.75,
+                .z = 0.0,
+            },
+            .scale = maths.Vector3f{
+                .x = 1.0,
+                .y = 1.0,
+                .z = 1.0,
+            },
+        });
+
+        nextId = state.entities.items.len;
+        try state.entities.append(Entity{
+            .id = nextId,
+            .pos = maths.Vector3f{
+                .x = 0.25,
+                .y = 0.75,
+                .z = 0.0,
+            },
+            .scale = maths.Vector3f{
+                .x = 1.0,
+                .y = 1.0,
+                .z = 1.0,
+            },
+        });
+    }
+
+    for (state.seekers) |value| {
+        if (value) |*it| {
+            var agent = &state.entities.items[it.agentId];
+            const target = &state.entities.items[it.targetId];
+
+            var dir = maths.v3f_sub(target.pos, agent.pos);
+            dir = maths.v3f_normalize(dir);
+
+            const ddp = maths.v3f_scale(dir, it.speed);
+            agent.pos = maths.v3f_add(agent.pos, ddp);
+        }
+    }
+
+    for (state.evaders) |value| {
+        if (value) |*it| {
+            var agent = &state.entities.items[it.agentId];
+            const target = &state.entities.items[it.targetId];
+
+            var dir = maths.v3f_sub(agent.pos, target.pos);
+            dir = maths.v3f_normalize(dir);
+
+            const ddp = maths.v3f_scale(dir, it.speed);
+            agent.pos = maths.v3f_add(agent.pos, ddp);
+        }
+    }
+
     // reset the renderer
     renderer.*.ops.clearRetainingCapacity();
 
-    // clear screen works
+    // clear screen
     try renderer.ops.append(render.RenderOp{
         .ClearScreen = render.Color3f{
             .r = 0.18,
@@ -34,35 +121,6 @@ pub fn UpdateAndRender(renderer: *render.Renderer) !void {
             .b = 0.18,
         },
     });
-
-    const tile_dim = 0.05;
-    const tile_map_dim = 100.0;
-    const tile_x_anchor = -1.0 * (tile_dim * tile_map_dim) / 2.0;
-    const tile_y_anchor = 1.0 * (tile_dim * tile_map_dim) / 2.0;
-    // const tiles: [tile_map_dim][tile_map_dim]Entity = undefined;
-    for (0..tile_map_dim) |j| {
-        for (0..tile_map_dim) |i| {
-            const xi: f32 = @floatFromInt(i);
-            const yi: f32 = @floatFromInt(j);
-            const x: f32 = tile_x_anchor + (2.0 * tile_dim * xi);
-            const y: f32 = tile_y_anchor - (2.0 * tile_dim * yi);
-            try renderer.ops.append(render.RenderOp{
-                .DrawQuad = render.Quad{
-                    .pos = maths.Vector3f{
-                        .x = x,
-                        .y = y,
-                        .z = 0.0,
-                    },
-                    .scale = maths.Vector3f{
-                        .x = tile_dim - 0.003,
-                        .y = tile_dim - 0.003,
-                        .z = 1.0,
-                    },
-                    .color = TileColor,
-                },
-            });
-        }
-    }
 
     // render structures
     try renderer.ops.append(render.RenderOp{

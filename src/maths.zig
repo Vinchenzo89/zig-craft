@@ -35,12 +35,21 @@ pub fn v3f_mul(a: v3f, b: v3f) v3f {
     return result;
 }
 
+pub fn v3f_scale(a: v3f, value: f32) v3f {
+    const result = .{
+        .x = (a.x * value),
+        .y = (a.y * value),
+        .z = (a.z * value),
+    };
+    return result;
+}
+
 pub fn v3f_dot(a: v3f, b: v3f) f32 {
     const result = ((a.x * b.x) + (a.y * b.y) + (a.z * b.z));
     return result;
 }
 
-pub fn v3f_length(a: f32) f32 {
+pub fn v3f_length(a: v3f) f32 {
     const result = std.math.sqrt((a.x * a.x) + (a.y * a.y) + (a.z + a.z));
     return result;
 }

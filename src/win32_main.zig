@@ -135,6 +135,7 @@ pub fn main() !u8 {
 
     // first game stuff
     var Renderer = draw.Renderer.init(fixedBufferAllocator.allocator());
+    var GameState = game.GameState.init(fixedBufferAllocator.allocator());
 
     // Main Loop
     GlobalRunning = true;
@@ -150,7 +151,7 @@ pub fn main() !u8 {
         }
 
         // Update game state
-        try game.UpdateAndRender(&Renderer);
+        try game.UpdateAndRender(&GameState, &Renderer);
 
         // Render a frame
         for (Renderer.ops.items) |r| {
