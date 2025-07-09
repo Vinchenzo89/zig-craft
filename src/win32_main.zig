@@ -157,6 +157,8 @@ pub fn main() !u8 {
         for (Renderer.ops.items) |r| {
             switch (r) {
                 .ClearScreen => |color| {
+                    //std.debug.print("Clearing the screen.\n", .{});
+                    gl.glClear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
                     gl.glClearColor(
                         color.r,
                         color.g,
@@ -198,7 +200,7 @@ pub fn main() !u8 {
                     gl.glEnd();
                 },
                 .DrawText => |text| {
-                    // crazy
+                    // crazy easy way to render text
                     gl.glColor3f(text.color.r, text.color.g, text.color.b);
                     gl.glRasterPos2f(text.pos.x, text.pos.y);
                     gl.glListBase(1000); // NOTE coresponds to the wglUseFontBitmaps above
