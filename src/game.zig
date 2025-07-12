@@ -5,49 +5,30 @@ const mem = @import("memory.zig");
 
 pub const Entity = struct {
     id: usize,
-    pos: maths.Vector3f,
-    scale: maths.Vector3f,
 
-    dp: maths.Vector3f, // velocity
-    ddp: maths.Vector3f, // acceleration
+    transform: ?Transform,
+    kinematics: ?Kinematics,
 
-    pub fn init(id: usize) Entity {
+    pub fn new(id: usize) Entity {
         return Entity{
             .id = id,
-            .pos = maths.Vector3f{
-                .x = 0.0,
-                .y = 0.0,
-                .z = 0.0,
-            },
-            .scale = maths.Vector3f{
-                .x = 1.0,
-                .y = 1.0,
-                .z = 1.0,
-            },
-            .dp = maths.Vector3f{
-                .x = 0.0,
-                .y = 0.0,
-                .z = 1.0,
-            },
-            .ddp = maths.Vector3f{
-                .x = 0.0,
-                .y = 0.0,
-                .z = 0.0,
-            },
+            .transform = null,
+            .kinematics = null,
         };
     }
 };
 
-pub const SeekBehavior: type = struct {
-    agentId: usize,
-    targetId: usize,
-    speed: f32,
+pub const Transform = struct {
+    pos: maths.Vector3f,
+    scale: maths.Vector3f,
 };
 
-pub const EvadeBehavior: type = struct {
-    agentId: usize,
-    targetId: usize,
-    speed: f32,
+pub const Kinematics = struct {
+    mass: f32,
+    max_speed: f32,
+    max_force: f32,
+    dp: maths.Vector3f, // velocity
+    ddp: maths.Vector3f, // acceleration
 };
 
 const MAX_FRAME_DT = 1.0 / 60.0;
@@ -95,73 +76,56 @@ pub fn UpdateAndRender(state: *GameState, renderer: *render.Renderer) !void {
     if (!state.initialized) {
         state.initialized = true;
 
+        // random
+        // var prng = std.rand.DefaultPrng.init(blk: {
+        //     var seed: u64 = undefined;
+        //     try std.posix.getrandom(std.mem.asBytes(&seed));
+        //     break :blk seed;
+        // });
+        // const rand = prng.random();
+
         {
-            const nextId = state.entities.items.len;
-            var e = Entity.init(nextId);
-            e.pos = maths.Vector3f{
-                .x = 0.25,
-                .y = 0.75,
-                .z = 0.0,
-            };
-            e.scale = maths.Vector3f{
-                .x = 0.1,
-                .y = 0.1,
-                .z = 1.0,
-            };
-            e.dp = maths.Vector3f{
-                .x = -0.03,
-                .y = -0.03,
-                .z = 0.0,
-            };
-            _ = try state.push_entity(e);
+            for (0..100) |i| {
+                const nextId = state.entities.items.len;
+                const max_speed = 0.1;
+                const x = std.math.cos(@as(f32, @floatFromInt(i))) * 0.5;
+                const y = std.math.sin(@as(f32, @floatFromInt(i))) * 0.5;
+                const dx = std.math.cos(@as(f32, @floatFromInt(i))) * max_speed;
+                const dy = std.math.sin(@as(f32, @floatFromInt(i))) * max_speed;
+                var e = Entity.new(nextId);
+                e.transform = Transform{
+                    .pos = maths.Vector3f{ .x = x, .y = y, .z = 0.0 },
+                    .scale = maths.Vector3f{ .x = 0.01, .y = 0.01, .z = 1.0 },
+                };
+                e.kinematics = Kinematics{
+                    .dp = maths.Vector3f{ .x = dx, .y = dy, .z = 0.0 },
+                    .ddp = maths.Vector3f{ .x = 0.0, .y = 0.0, .z = 0.0 },
+                    .mass = 1.0,
+                    .max_force = 1.0,
+                    .max_speed = 50.0,
+                };
+
+                _ = try state.push_entity(e);
+            }
         }
 
         {
             const nextId = state.entities.items.len;
-            var e = Entity.init(nextId);
-            e.pos = maths.Vector3f{
-                .x = -0.25,
-                .y = -0.75,
-                .z = 0.0,
-            };
-            e.scale = maths.Vector3f{
-                .x = 0.25,
-                .y = 0.15,
-                .z = 1.0,
+            var e = Entity.new(nextId);
+            e.transform = Transform{
+                .pos = maths.Vector3f{ .x = -0.25, .y = -0.75, .z = 0.0 },
+                .scale = maths.Vector3f{ .x = 0.25, .y = 0.15, .z = 1.0 },
             };
             _ = try state.push_entity(e);
         }
     }
 
-    // for (state.seekers) |value| {
-    //     if (value) |*it| {
-    //         var agent = &state.entities.items[it.agentId];
-    //         const target = &state.entities.items[it.targetId];
-
-    //         var dir = maths.v3f_sub(target.pos, agent.pos);
-    //         dir = maths.v3f_normalize(dir);
-
-    //         const ddp = maths.v3f_scale(dir, it.speed);
-    //         agent.pos = maths.v3f_add(agent.pos, ddp);
-    //     }
-    // }
-
-    // for (state.evaders) |value| {
-    //     if (value) |*it| {
-    //         var agent = &state.entities.items[it.agentId];
-    //         const target = &state.entities.items[it.targetId];
-
-    //         var dir = maths.v3f_sub(agent.pos, target.pos);
-    //         dir = maths.v3f_normalize(dir);
-
-    //         const ddp = maths.v3f_scale(dir, it.speed);
-    //         agent.pos = maths.v3f_add(agent.pos, ddp);
-    //     }
-    // }
-
     for (state.entities.items) |*e| {
-        const dp = maths.v3f_scale(e.dp, state.frame_dt);
-        e.pos = maths.v3f_add(e.pos, dp);
+        if (e.kinematics) |kin| {
+            const tx = &e.transform.?; // everything should have a transform
+            const dp = maths.v3f_scale(kin.dp, state.frame_dt);
+            e.transform.?.pos = maths.v3f_add(tx.pos, dp);
+        }
     }
 
     // reset the renderer
@@ -178,10 +142,11 @@ pub fn UpdateAndRender(state: *GameState, renderer: *render.Renderer) !void {
 
     for (0..state.entity_count) |id| {
         const e = &state.entities.items[id];
+        const tx = e.transform.?;
         try renderer.ops.append(render.RenderOp{
             .DrawQuad = render.Quad{
-                .pos = e.pos,
-                .scale = e.scale,
+                .pos = tx.pos,
+                .scale = tx.scale,
                 .color = UnitColor,
             },
         });

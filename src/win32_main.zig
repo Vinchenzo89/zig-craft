@@ -171,7 +171,6 @@ pub fn main() !u8 {
                     // TODO We need to call the matrix function to push a model matrix
                     gl.glColor3f(quad.color.r, quad.color.g, quad.color.b);
                     gl.glBegin(gl.TRIANGLES);
-
                     gl.glVertex2f(
                         -quad.scale.x + quad.pos.x,
                         -quad.scale.y + quad.pos.y,
