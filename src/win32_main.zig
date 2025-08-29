@@ -134,13 +134,23 @@ pub fn main() !u8 {
     var fixedBufferAllocator = std.heap.FixedBufferAllocator.init(oneGigMemory);
 
     // first game stuff
-    var Renderer = draw.Renderer.init(fixedBufferAllocator.allocator());
+    var Renderer = draw.Renderer.init(fixedBufferAllocator.allocator(), 1080.0, 920.0);
     var GameState = game.GameState.init(fixedBufferAllocator.allocator());
 
     // Main Loop
     GlobalRunning = true;
     var Message: windows.MSG = undefined;
+    var last_time = std.time.nanoTimestamp();
+    
     while (GlobalRunning) {
+        const current_time = std.time.nanoTimestamp();
+        const delta_time_ns = current_time - last_time;
+        const delta_time_seconds = @as(f32, @floatFromInt(delta_time_ns)) / 1_000_000_000.0;
+        last_time = current_time;
+
+        // frame input
+        const Input = game.GameInput.init();
+
         while (windows.PeekMessageA(&Message, null, 0, 0, windows.PM_REMOVE) > 0) {
             _ = windows.TranslateMessage(&Message);
             _ = windows.DispatchMessageA(&Message);
@@ -148,10 +158,82 @@ pub fn main() !u8 {
                 std.debug.print("We are quiting for some reason.", .{});
                 GlobalRunning = false;
             }
+
+            // const WM_LBUTTONDOWN = 0x0201;
+            // const WM_LBUTTONUP = 0x0202;
+            // const WM_MOUSEMOVE = 0x0200;
+
+            // const WM_KEYUP = 0x0101;
+            // const WM_KEYDOWN = 0x0100;
+            // const WM_SYSKEYUP = 0x0105;
+            // const WM_SYSKEYDOWN = 0x0104;
+
+            // const VK_SPACE = 0x20;
+
+            // const KeyIsDownBitFlag = 1 << 31;
+            // const KeyWasDownBitFlag = 1 << 30;
+
+            // switch (Message.message) {
+            //     // WM_LBUTTONDOWN => {
+            //     //     input.mouse_lbutton_down = true;
+            //     // },
+            //     // WM_LBUTTONUP => {
+            //     //     input.mouse_lbutton_down = false;
+            //     // },
+            //     // WM_MOUSEMOVE => {
+            //     //     const MOUSE_X_MASK: isize = 0x0000FFFF;
+            //     //     const MOUSE_Y_MASK: isize = 0xFFFF0000;
+
+            //     //     const dpi = win.user32.GetDpiForWindow.?(@ptrCast(win.HWND, window_handle));
+            //     //     const scale = @as(f32, @floatFromInt(dpi)) / 96.0;
+
+            //     //     const lParam = msg.lParam;
+            //     //     input.screen_mouse_x = @as(f32, @floatFromInt(@intCast(i16, lParam & MOUSE_X_MASK))) / scale;
+            //     //     input.screen_mouse_y = @as(f32, @floatFromInt(@intCast(i16, (lParam & MOUSE_Y_MASK) >> 16))) / scale;
+            //     // },
+            //     WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP => {
+            //         const lParam = Message.lParam;
+            //         const wParam = Message.wParam;
+
+            //         const is_down = (lParam & KeyIsDownBitFlag) == 0;
+            //         const was_down = (lParam & KeyWasDownBitFlag) != 0;
+            //         const released = was_down and !is_down;
+
+            //         switch (wParam) {
+            //             VK_SPACE => {
+            //                 if (is_down) button_set_is_down(&input.do_action);
+            //                 if (released) button_set_is_released(&input.do_action);
+            //             },
+            //             'A' => input.turn_left = is_down,
+            //             'D' => input.turn_right = is_down,
+            //             'W' => input.accelerate = is_down,
+            //             'S' => input.decelerate = is_down,
+            //             'J' => {
+            //                 if (is_down) button_set_is_down(&input.magic_left);
+            //                 if (released) button_set_is_released(&input.magic_left);
+            //             },
+            //             'L' => {
+            //                 if (is_down) button_set_is_down(&input.magic_right);
+            //                 if (released) button_set_is_released(&input.magic_right);
+            //             },
+            //             'I' => {
+            //                 if (is_down) button_set_is_down(&input.magic_top);
+            //                 if (released) button_set_is_released(&input.magic_top);
+            //             },
+            //             'K' => {
+            //                 if (is_down) button_set_is_down(&input.magic_bottom);
+            //                 if (released) button_set_is_released(&input.magic_bottom);
+            //             },
+            //             else => {},
+            //         }
+            //     },
+            //     else => {},
+            // }
         }
 
         // Update game state
-        try game.UpdateAndRender(&GameState, &Renderer);
+        GameState.frame_dt = delta_time_seconds;
+        try game.UpdateAndRender(Input, &GameState, &Renderer);
 
         // Render a frame
         for (Renderer.ops.items) |r| {
@@ -210,8 +292,6 @@ pub fn main() !u8 {
         }
 
         _ = windows.SwapBuffers(WindowHDC);
-
-        std.time.sleep(17_000_000);
     }
 
     std.debug.print("Are we dying gracefully?", .{});

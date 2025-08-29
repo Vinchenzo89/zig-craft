@@ -33,16 +33,16 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "zig-rts",
-        .root_source_file = b.path("src/win32_main.zig"),
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
 
     exe.linkSystemLibrary("c");
-    exe.linkSystemLibrary("user32");
-    exe.linkSystemLibrary("gdi32");
-    // exe.linkSystemLibrary("winmm");
-    exe.linkSystemLibrary("opengl32");
+
+    // Link to the raylib.dll directly
+    exe.addObjectFile(.{ .cwd_relative = "C:/Raylib/raylib-5.0_win64_mingw-w64/lib/raylib.dll" });
+    exe.addIncludePath(.{ .cwd_relative = "C:/Raylib/raylib-5.0_win64_mingw-w64/include" });
 
     // try zwindows
     // const zwindows_dependency = b.dependency("zwindows", .{});
