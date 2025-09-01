@@ -5,6 +5,15 @@ const c = @cImport({
 // graphics settings
 pub const SetConfigFlags = c.SetConfigFlags;
 pub const FLAG_VSYNC_HINT = c.FLAG_VSYNC_HINT;
+pub const FLAG_WINDOW_HIGHDPI = c.FLAG_WINDOW_HIGHDPI;
+
+// monitor and DPI functions
+pub const GetCurrentMonitor = c.GetCurrentMonitor;
+pub const GetMonitorWidth = c.GetMonitorWidth;
+pub const GetMonitorHeight = c.GetMonitorHeight;
+pub const GetMonitorPhysicalWidth = c.GetMonitorPhysicalWidth;
+pub const GetMonitorPhysicalHeight = c.GetMonitorPhysicalHeight;
+pub const GetWindowScaleDPI = c.GetWindowScaleDPI;
 
 pub const Color = c.Color;
 pub const Vector2 = c.Vector2;

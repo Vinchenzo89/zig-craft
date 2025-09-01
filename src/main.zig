@@ -6,30 +6,47 @@ const maths = @import("maths.zig");
 const game = @import("game.zig");
 
 pub fn main() !void {
-    const screenWidth = 1080;
-    const screenHeight = 920;
+    // Base logical size for the game
+    const baseWidth = 1080;
+    const baseHeight = 920;
 
-    rl.SetConfigFlags(rl.FLAG_VSYNC_HINT);
-    rl.InitWindow(screenWidth, screenHeight, "Zig RTS Game");
-    rl.SetTargetFPS(60); // Uncomment this line
+    // Enable high DPI support and VSync
+    rl.SetConfigFlags(rl.FLAG_VSYNC_HINT | rl.FLAG_WINDOW_HIGHDPI);
+    rl.InitWindow(baseWidth, baseHeight, "Zig RTS Game");
+    rl.SetTargetFPS(60);
+
+    // Get DPI scale factor
+    const dpiScale = rl.GetWindowScaleDPI();
+    const screenWidth = @as(i32, @intFromFloat(@as(f32, @floatFromInt(baseWidth)) * dpiScale.x));
+    const screenHeight = @as(i32, @intFromFloat(@as(f32, @floatFromInt(baseHeight)) * dpiScale.y));
+
+    std.debug.print("DPI Scale: {d:.2}x{d:.2}, Window: {}x{}\n", .{ dpiScale.x, dpiScale.y, screenWidth, screenHeight });
 
     const oneGigMemory = try std.heap.page_allocator.alloc(u8, 1024 * 1024);
     var fixedBufferAllocator = std.heap.FixedBufferAllocator.init(oneGigMemory);
 
     // Define world bounds - this is your game world coordinate system
-    const worldWidth: f32 = 100.0; // World is 100 units wide
-    const worldHeight: f32 = 75.0; // World is 75 units tall (maintaining 4:3 aspect ratio)
+    const worldWidth: f32 = 400.0; // World is 100 units wide
+    const worldHeight: f32 = 400.0; // World is 75 units tall (maintaining 4:3 aspect ratio)
 
-    // Set up orthographic camera
+    // Set up orthographic camera with DPI scaling
+    // Calculate zoom to fit world in screen
+    const worldToScreenZoomX = @as(f32, @floatFromInt(screenWidth)) / worldWidth;
+    const worldToScreenZoomY = @as(f32, @floatFromInt(screenHeight)) / worldHeight;
+    const worldToScreenZoom = @min(worldToScreenZoomX, worldToScreenZoomY) * 0.8; // 0.8 for padding
+
     const camera = rl.Camera2D{
-        .offset = rl.Vector2{ .x = @floatFromInt(screenWidth / 2), .y = @floatFromInt(screenHeight / 2) },
-        .target = rl.Vector2{ .x = 0.0, .y = 0.0 },
+        .offset = rl.Vector2{
+            .x = @floatFromInt(@divTrunc(baseWidth, 2)), // Use base dimensions, not DPI scaled
+            .y = @floatFromInt(@divTrunc(baseHeight, 2)),
+        },
+        .target = rl.Vector2{ .x = 0.0, .y = 0.0 }, // World center
         .rotation = 0.0,
-        .zoom = 1.0,
+        .zoom = worldToScreenZoom / dpiScale.x, // Compensate for DPI scaling
     };
 
     var renderer = draw.Renderer.init(fixedBufferAllocator.allocator(), worldWidth, worldHeight);
-    var gameState = game.GameState.init(fixedBufferAllocator.allocator());
+    var game_state = game.GameState.init(fixedBufferAllocator.allocator(), worldWidth, worldHeight);
     var last_time = std.time.nanoTimestamp();
 
     std.time.sleep(1_000_000);
@@ -40,7 +57,7 @@ pub fn main() !void {
         const delta_time_seconds = @as(f32, @floatFromInt(delta_time_ns)) / 1_000_000_000.0;
         last_time = current_time;
 
-        gameState.frame_dt = delta_time_seconds;
+        game_state.frame_dt = delta_time_seconds;
 
         const input = game.GameInput{
             .up_button = rl.IsKeyDown(rl.KEY_W),
@@ -49,7 +66,7 @@ pub fn main() !void {
             .right_button = rl.IsKeyDown(rl.KEY_D),
         };
 
-        try game.UpdateAndRender(input, &gameState, &renderer);
+        try game.UpdateAndRender(input, &game_state, &renderer);
 
         rl.BeginDrawing();
         rl.BeginMode2D(camera);

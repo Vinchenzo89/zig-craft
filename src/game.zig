@@ -79,12 +79,15 @@ pub const GameState = struct {
     entity_count: usize, // not the capacity of the array but count added this frame
     entities: std.ArrayList(Entity) = undefined,
 
-    pub fn init(allocator: std.mem.Allocator) GameState {
+    world_dim: maths.Vector3f,
+
+    pub fn init(allocator: std.mem.Allocator, world_width: f32, world_height: f32) GameState {
         return GameState{
             .initialized = false,
             .frame_dt = 0.0,
             .entity_count = 0,
             .entities = std.ArrayList(Entity).init(allocator),
+            .world_dim = maths.v32_new(world_width, world_height, 0.0),
         };
     }
 
@@ -167,8 +170,8 @@ pub fn UpdateAndRender(_: GameInput, state: *GameState, renderer: *render.Render
             var new_pos = maths.v3f_add(tx.pos, dp);
 
             // Keep entities within world bounds
-            const world_half_width: f32 = 200.0; // worldWidth / 2
-            const world_half_height: f32 = 200.0; // worldHeight / 2
+            const world_half_width: f32 = state.world_dim.x / 2; // worldWidth / 2
+            const world_half_height: f32 = state.world_dim.y / 2; // worldHeight / 2
 
             if (new_pos.x > world_half_width or new_pos.x < -world_half_width) {
                 kin.dp.x = -kin.dp.x; // reverse x velocity
@@ -186,12 +189,29 @@ pub fn UpdateAndRender(_: GameInput, state: *GameState, renderer: *render.Render
     // reset the renderer
     renderer.ops.clearRetainingCapacity();
 
-    // clear screen
+    // clear screen to black
     try renderer.ops.append(render.RenderOp{
         .ClearScreen = render.Color3f{
-            .r = 0.18,
-            .g = 0.18,
-            .b = 0.18,
+            .r = 0.0,
+            .g = 0.0,
+            .b = 0.0,
+        },
+    });
+
+    // draw world boundary rectangle (100x75 world bounds)
+    try renderer.ops.append(render.RenderOp{
+        .DrawQuad = render.Quad{
+            .pos = maths.Vector3f{ .x = 0.0, .y = 0.0, .z = 0.0 }, // World center
+            .scale = maths.Vector3f{
+                .x = state.world_dim.x,
+                .y = state.world_dim.y,
+                .z = 1.0,
+            }, // World bounds from main.zig
+            .color = render.Color3f{
+                .r = 0.1,
+                .g = 0.1,
+                .b = 0.2,
+            },
         },
     });
 

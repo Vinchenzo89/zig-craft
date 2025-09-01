@@ -8,6 +8,22 @@ pub const Vector3f = packed struct {
 // alias the type so it is shorter?
 const v3f: type = Vector3f;
 
+pub fn v32_new(x: f32, y: f32, z: f32) v3f {
+    return .{
+        .x = x,
+        .y = y,
+        .z = z,
+    };
+}
+
+pub fn v32_zero() v3f {
+    return .{
+        .x = 0.0,
+        .y = 0.0,
+        .z = 0.0,
+    };
+}
+
 pub fn v3f_add(a: v3f, b: v3f) v3f {
     const result = .{
         .x = (a.x + b.x),
