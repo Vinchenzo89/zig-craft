@@ -51,3 +51,5 @@ pub const KEY_W = c.KEY_W;
 pub const KEY_A = c.KEY_A;
 pub const KEY_S = c.KEY_S;
 pub const KEY_D = c.KEY_D;
+pub const KEY_UP = c.KEY_UP;
+pub const KEY_DOWN = c.KEY_DOWN;

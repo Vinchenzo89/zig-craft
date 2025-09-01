@@ -35,7 +35,7 @@ pub fn main() !void {
     const worldToScreenZoomY = @as(f32, @floatFromInt(screenHeight)) / worldHeight;
     const worldToScreenZoom = @min(worldToScreenZoomX, worldToScreenZoomY) * 0.8; // 0.8 for padding
 
-    const camera = rl.Camera2D{
+    var camera = rl.Camera2D{
         .offset = rl.Vector2{
             .x = @floatFromInt(@divTrunc(baseWidth, 2)), // Use base dimensions, not DPI scaled
             .y = @floatFromInt(@divTrunc(baseHeight, 2)),
@@ -48,6 +48,10 @@ pub fn main() !void {
     var renderer = draw.Renderer.init(fixedBufferAllocator.allocator(), worldWidth, worldHeight);
     var game_state = game.GameState.init(fixedBufferAllocator.allocator(), worldWidth, worldHeight);
     var last_time = std.time.nanoTimestamp();
+    
+    // FPS tracking
+    var fps: f32 = 0.0;
+    var fps_update_timer: f32 = 0.0;
 
     std.time.sleep(1_000_000);
 
@@ -58,6 +62,29 @@ pub fn main() !void {
         last_time = current_time;
 
         game_state.frame_dt = delta_time_seconds;
+        
+        // Update FPS calculation every 0.5 seconds
+        fps_update_timer += delta_time_seconds;
+        if (fps_update_timer >= 0.5) {
+            fps = 1.0 / delta_time_seconds;
+            fps_update_timer = 0.0;
+        }
+
+        // Handle camera movement with WASD
+        const camera_speed: f32 = 100.0 * delta_time_seconds; // 100 world units per second
+        if (rl.IsKeyDown(rl.KEY_W)) camera.target.y -= camera_speed; // Up
+        if (rl.IsKeyDown(rl.KEY_S)) camera.target.y += camera_speed; // Down  
+        if (rl.IsKeyDown(rl.KEY_A)) camera.target.x -= camera_speed; // Left
+        if (rl.IsKeyDown(rl.KEY_D)) camera.target.x += camera_speed; // Right
+        
+        // Handle camera zoom with arrow keys
+        const zoom_speed: f32 = 2.0 * delta_time_seconds; // 2x zoom change per second
+        if (rl.IsKeyDown(rl.KEY_UP)) camera.zoom += zoom_speed; // Zoom in
+        if (rl.IsKeyDown(rl.KEY_DOWN)) camera.zoom -= zoom_speed; // Zoom out
+        
+        // Clamp zoom to reasonable limits
+        if (camera.zoom < 0.1) camera.zoom = 0.1; // Min zoom out
+        if (camera.zoom > 10.0) camera.zoom = 10.0; // Max zoom in
 
         const input = game.GameInput{
             .up_button = rl.IsKeyDown(rl.KEY_W),
@@ -72,6 +99,12 @@ pub fn main() !void {
         rl.BeginMode2D(camera);
         renderer.executeRenderOps();
         rl.EndMode2D();
+        
+        // Debug overlay - rendered outside the camera view (screen coordinates)
+        var fps_buffer: [32]u8 = undefined;
+        const fps_text = std.fmt.bufPrint(fps_buffer[0..], "FPS: {d:.1}", .{fps}) catch "FPS: ERROR";
+        rl.DrawText(@ptrCast(fps_text), 10, 10, 20, rl.GREEN);
+        
         rl.EndDrawing();
 
         // const frame_end_time = std.time.nanoTimestamp();

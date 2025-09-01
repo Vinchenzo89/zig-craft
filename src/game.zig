@@ -137,7 +137,7 @@ pub fn UpdateAndRender(_: GameInput, state: *GameState, renderer: *render.Render
         state.initialized = true;
 
         {
-            for (0..100) |i| {
+            for (0..500) |i| {
                 const nextId = state.entities.items.len;
                 const speed = 20.0; // World units per second
                 const radius = 25.0; // Spawn in a circle with radius 25 world units
