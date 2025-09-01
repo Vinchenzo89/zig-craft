@@ -9,8 +9,9 @@ pub fn main() !void {
     const screenWidth = 1080;
     const screenHeight = 920;
 
+    rl.SetConfigFlags(rl.FLAG_VSYNC_HINT);
     rl.InitWindow(screenWidth, screenHeight, "Zig RTS Game");
-    // rl.SetTargetFPS(60); // Comment out to use manual timing
+    rl.SetTargetFPS(60); // Uncomment this line
 
     const oneGigMemory = try std.heap.page_allocator.alloc(u8, 1024 * 1024);
     var fixedBufferAllocator = std.heap.FixedBufferAllocator.init(oneGigMemory);
@@ -56,17 +57,17 @@ pub fn main() !void {
         rl.EndMode2D();
         rl.EndDrawing();
 
-        const frame_end_time = std.time.nanoTimestamp();
-        const work_done_ns = frame_end_time - current_time;
-        const target_frame_ns = 16_666_667; // 60 FPS = ~16.67ms in nanoseconds
-        const time_left_ns = target_frame_ns - work_done_ns;
+        // const frame_end_time = std.time.nanoTimestamp();
+        // const work_done_ns = frame_end_time - current_time;
+        // const target_frame_ns = 16_666_667; // 60 FPS = ~16.67ms in nanoseconds
+        // const time_left_ns = target_frame_ns - work_done_ns;
 
         // std.debug.print("time_left_ns: {}, work_done_ns: {}\n", .{ time_left_ns, work_done_ns });
 
-        if (time_left_ns > 0) {
-            // std.debug.print("Sleeping for: {} ns\n", .{time_left_ns});
-            std.time.sleep(@intCast(time_left_ns));
-        }
+        // if (time_left_ns > 0) {
+        //     // std.debug.print("Sleeping for: {} ns\n", .{time_left_ns});
+        //     std.time.sleep(@intCast(time_left_ns));
+        // }
     }
 
     rl.CloseWindow();

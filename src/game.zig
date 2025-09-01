@@ -152,7 +152,7 @@ pub fn UpdateAndRender(_: GameInput, state: *GameState, renderer: *render.Render
                     .ddp = maths.Vector3f{ .x = 0.0, .y = 0.0, .z = 0.0 },
                     .mass = 1.0,
                     .max_force = 1.0,
-                    .max_speed = 30.0, // Max 30 world units per second
+                    .max_speed = 5.0, // Max 30 world units per second
                 };
 
                 _ = try state.push_entity(e);
@@ -165,11 +165,11 @@ pub fn UpdateAndRender(_: GameInput, state: *GameState, renderer: *render.Render
             const tx = &e.transform.?; // everything should have a transform
             const dp = maths.v3f_scale(kin.dp, state.frame_dt);
             var new_pos = maths.v3f_add(tx.pos, dp);
-            
-            // Keep entities within world bounds 
-            const world_half_width: f32 = 50.0;  // worldWidth / 2
-            const world_half_height: f32 = 37.5; // worldHeight / 2
-            
+
+            // Keep entities within world bounds
+            const world_half_width: f32 = 200.0; // worldWidth / 2
+            const world_half_height: f32 = 200.0; // worldHeight / 2
+
             if (new_pos.x > world_half_width or new_pos.x < -world_half_width) {
                 kin.dp.x = -kin.dp.x; // reverse x velocity
                 new_pos.x = if (new_pos.x > world_half_width) world_half_width else -world_half_width; // clamp position
@@ -178,7 +178,7 @@ pub fn UpdateAndRender(_: GameInput, state: *GameState, renderer: *render.Render
                 kin.dp.y = -kin.dp.y; // reverse y velocity
                 new_pos.y = if (new_pos.y > world_half_height) world_half_height else -world_half_height; // clamp position
             }
-            
+
             e.transform.?.pos = new_pos;
         }
     }

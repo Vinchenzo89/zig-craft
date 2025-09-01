@@ -2,6 +2,10 @@ const c = @cImport({
     @cInclude("raylib.h");
 });
 
+// graphics settings
+pub const SetConfigFlags = c.SetConfigFlags;
+pub const FLAG_VSYNC_HINT = c.FLAG_VSYNC_HINT;
+
 pub const Color = c.Color;
 pub const Vector2 = c.Vector2;
 pub const Vector3 = c.Vector3;
